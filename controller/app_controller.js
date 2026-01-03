@@ -86,3 +86,58 @@ export const getCreatorWrapped = async (req, res) => {
         });
     }
 };
+
+export const createWrapped = async (req, res) => {
+    try {
+        const { originalUrl, methods, gatewaySlug, paymentAmount,paymentReceipt, description} = req.body;
+        const {creatorId} = req.params;
+        // console.log(creatorId);
+        // console.log(originalUrl);
+        // console.log(methods);
+        // console.log(gatewaySlug);
+        // console.log(paymentAmount);
+        // console.log(paymentReceipt);
+        // console.log(description);
+        if (
+            !originalUrl ||
+            !methods ||
+            !gatewaySlug||
+            !paymentAmount ||
+            !paymentReceipt ||
+            !description
+            || creatorId === undefined
+        ) {
+            return res.status(400).json({
+                message: "Missing required fields",
+            });
+        }
+
+        let parts = originalUrl.split('/');
+        parts.pop(); 
+        const newUrl = parts.join('/') + '/' + gatewaySlug;
+
+            // Simpan ke database
+         await prisma.wrappedData.create({
+            data: {
+                originalUrl: originalUrl,
+                methods: methods,
+                gatewaySlug: gatewaySlug,
+                paymentAmount: paymentAmount,
+                paymentReceipt: paymentReceipt,
+                description: description,
+                creatorId: parseInt(creatorId),
+                urlWrapped: newUrl
+            },
+        });
+
+        return res.status(201).json({
+            message: "success",
+            newUrl: newUrl
+        });
+    } catch (error) {
+        console.error("Error creating asset:", error);
+        return res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};

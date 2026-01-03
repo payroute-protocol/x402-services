@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerCreator, getProfile, getCreatorAll, getCreatorWrapped } from '../controller/app_controller.js';
+import { registerCreator, getProfile, getCreatorAll, getCreatorWrapped, createWrapped } from '../controller/app_controller.js';
 
 const router = express.Router();
 
@@ -143,6 +143,8 @@ router.get('/creator/', getCreatorAll)
  */
 router.get('/creator/wrapped/:idCreator', getCreatorWrapped)
 // router.get('/creator/profile/:id', getCreatorProfile);
+
+router.post('/creator/wrapped/:creatorId', createWrapped)
 
 // // payment x402
 // router.get('/creator/assets/:id/purchase', getAssetsWithPayment);

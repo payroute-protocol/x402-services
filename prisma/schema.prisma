@@ -30,6 +30,7 @@ model WrappedData {
   paymentReceipt String
   description   String?
   creatorId   Int
+  urlWrapped String
   creator     Creator @relation(fields: [creatorId], references: [id])
   timestamp     DateTime @default(now())
 }
