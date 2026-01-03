@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Creator {
+  id            Int           @id @default(autoincrement())
+  walletAddress String        @unique
+  assets        WrappedData[]
+  timestamp     DateTime @default(now())
+}
+
+model WrappedData {
+  id          Int     @id @default(autoincrement())
+  originalUrl String
+  methods     String
+  gatewaySlug     String
+  paymentAmount  Float
+  paymentReceipt String
+  description   String?
+  creatorId   Int
+  creator     Creator @relation(fields: [creatorId], references: [id])
+  timestamp     DateTime @default(now())
+}
+
+model transactions {
+  id            Int      @id @default(autoincrement())
+  buyestWallet  String
+  creatorWallet String
+  amount        Float
+  timestamp     DateTime @default(now())
+}
