@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerCreator, getProfile, getCreatorAll, getCreatorWrapped, createWrapped } from '../controller/app_controller.js';
+import { registerCreator, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute } from '../controller/app_controller.js';
 
 const router = express.Router();
 
@@ -144,10 +144,67 @@ router.get('/creator/', getCreatorAll)
 router.get('/creator/wrapped/:idCreator', getCreatorWrapped)
 // router.get('/creator/profile/:id', getCreatorProfile);
 
+/**
+ * @swagger
+ * /creator/wrapped/{creatorId}:
+ *   post:
+ *     summary: Create new wrapped data
+ *     tags: [Creator]
+ *     parameters:
+ *       - in: path
+ *         name: creatorId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: The creator ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - originalUrl
+ *               - methods
+ *               - gatewaySlug
+ *               - paymentAmount
+ *               - paymentReceipt
+ *               - description
+ *             properties:
+ *               originalUrl:
+ *                 type: string
+ *               methods:
+ *                 type: string
+ *               gatewaySlug:
+ *                 type: string
+ *               paymentAmount:
+ *                 type: string
+ *               paymentReceipt:
+ *                 type: string
+ *               description:
+ *                  type: string
+ *     responses:
+ *       201:
+ *         description: The created wrapped data.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: success
+ *                 newUrl:
+ *                   type: string
+ *       400:
+ *         description: Missing required fields
+ *       500:
+ *         description: Server error
+ */
 router.post('/creator/wrapped/:creatorId', createWrapped)
 
 // // payment x402
-// router.get('/creator/assets/:id/purchase', getAssetsWithPayment);
+router.all("/:gatewaySlug", getPayroute);
 // router.post('/creator/assets/:id/verify', verifyAssetsPayment);
 
 // router.get('/creator/find-by-wallet/:walletAddress', getProfileByWalletAddress);

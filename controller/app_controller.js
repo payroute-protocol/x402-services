@@ -1,5 +1,7 @@
 import { prisma } from "../util/prisma_config.js"
 import { ethers } from "ethers";
+import axios from "axios";
+
 
 export const registerCreator = async (req, res) => {
     const { walletAddress } = req.body;
@@ -112,9 +114,10 @@ export const createWrapped = async (req, res) => {
             });
         }
 
-        let parts = originalUrl.split('/');
-        parts.pop(); 
-        const newUrl = parts.join('/') + '/' + gatewaySlug;
+        // let parts = originalUrl.split('/');
+        // parts.pop(); 
+        const baseurl = `${req.protocol}://${req.get('host')}`;
+        const newUrl = `${baseurl}/${gatewaySlug}`;
 
             // Simpan ke database
          await prisma.wrappedData.create({
@@ -136,6 +139,50 @@ export const createWrapped = async (req, res) => {
         });
     } catch (error) {
         console.error("Error creating asset:", error);
+
+        if (error.code === "P2002") {
+            return res.status(500).json({
+                message: "gatewaySlug already exists",
+            });
+        }
+
+        return res.status(500).json({
+            message: "Internal Server Error",
+        });
+    }
+};
+
+export const getPayroute = async (req, res) => {
+    try {
+        const { gatewaySlug } = req.params;
+        const wrapped = await prisma.wrappedData.findUnique({
+            where: { gatewaySlug }
+        });
+
+        if (!wrapped) {
+            return res.status(404).json({
+                message: "Wrapped data not found",
+            });
+        }
+
+        const {originalUrl, methods} = wrapped;
+        const requestMethod = req.method.toUpperCase();
+        if (!methods.includes(requestMethod)) {
+            return res.status(405).json({
+                message: `Method ${requestMethod} not allowed`,
+            });
+        }
+
+        // Forward Request to originalUrl
+        const response = await axios(originalUrl, {
+            method: requestMethod,
+            // headers: req.headers,
+            // data: req.body,
+        });
+
+        return res.status(response.status).json(response.data);
+    } catch (error) {
+        console.error("Error fetching wrapped:", error);
         return res.status(500).json({
             message: "Internal Server Error",
         });
