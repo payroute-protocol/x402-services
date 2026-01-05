@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerCreator, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute } from '../controller/app_controller.js';
+import { registerCreator, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute, getPayrouteWithEscrow } from '../controller/app_controller.js';
 
 const router = express.Router();
 
@@ -203,8 +203,167 @@ router.get('/creator/wrapped/:idCreator', getCreatorWrapped)
  */
 router.post('/creator/wrapped/:creatorId', createWrapped)
 
-// // payment x402
+// payment x402
+/**
+ * @swagger
+ * /{gatewaySlug}:
+ *   get:
+ *     summary: Access a gateway endpoint (GET)
+ *     tags: [PayrouteWithEscrow]
+ *     parameters:
+ *       - in: path
+ *         name: gatewaySlug
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The gateway slug
+ *       - in: header
+ *         name: x-payment-tx
+ *         schema:
+ *           type: string
+ *         description: Escrow Transaction ID
+ *     responses:
+ *       200:
+ *         description: Proxy Success
+ *       402:
+ *         description: Payment Required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 receiverAddress:
+ *                   type: string
+ *                 transactionId:
+ *                   type: string
+ *                 escrowAddress:
+ *                   type: string
+ *                 amount:
+ *                   type: number
+ *                 currency:
+ *                   type: string
+ *                 chain:
+ *                   type: string
+ *                 requiredHeader:
+ *                   type: string
+ *       404:
+ *         description: Gateway not found
+ *       500:
+ *         description: Server Error
+ *   post:
+ *     summary: Access a gateway endpoint (POST)
+ *     tags: [Payroute]
+ *     parameters:
+ *       - in: path
+ *         name: gatewaySlug
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: header
+ *         name: x-payment-tx
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Proxy Success
+ *       402:
+ *         description: Payment Required
+ *       404:
+ *         description: Gateway not found
+ *       500:
+ *         description: Server Error
+ */
+// router.all("/:gatewaySlug", getPayrouteWithEscrow)
+
+
+/**
+ * @swagger
+ * /{gatewaySlug}:
+ *   get:
+ *     summary: Access a gateway endpoint (Direct Payment)
+ *     tags: [Payroute]
+ *     parameters:
+ *       - in: path
+ *         name: gatewaySlug
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The gateway slug
+ *       - in: header
+ *         name: x-payment-tx
+ *         schema:
+ *           type: string
+ *         description: Direct Payment Transaction Hash (Bearer <txHash>)
+ *     responses:
+ *       200:
+ *         description: Proxy Success
+ *       402:
+ *         description: Payment Required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 receiverAddress:
+ *                   type: string
+ *                 transactionId:
+ *                   type: string
+ *                 amount:
+ *                   type: number
+ *                 currency:
+ *                   type: string
+ *                 chain:
+ *                   type: string
+ *                 requiredHeader:
+ *                   type: string
+ *       404:
+ *         description: Gateway not found
+ *       500:
+ *         description: Server Error
+ *   post:
+ *     summary: Access a gateway endpoint (Direct Payment POST)
+ *     tags: [Payroute]
+ *     parameters:
+ *       - in: path
+ *         name: gatewaySlug
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: header
+ *         name: x-payment-tx
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Proxy Success
+ *       402:
+ *         description: Payment Required
+ *       404:
+ *         description: Gateway not found
+ *       500:
+ *         description: Server Error
+ */
 router.all("/:gatewaySlug", getPayroute);
+
+
+
+
+
+
 // router.post('/creator/assets/:id/verify', verifyAssetsPayment);
 
 // router.get('/creator/find-by-wallet/:walletAddress', getProfileByWalletAddress);

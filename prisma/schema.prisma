@@ -26,6 +26,8 @@ model WrappedData {
   originalUrl String
   methods     String
   gatewaySlug     String @unique
+  header      String  @default("")
+  body        String  @default("")
   paymentAmount  Float
   paymentReceipt String
   description   String?
@@ -36,9 +38,11 @@ model WrappedData {
 }
 
 model transactions {
-  id            Int      @id @default(autoincrement())
-  buyestWallet  String
-  creatorWallet String
-  amount        Float
+  id             String   @id @db.Char(66)
+  buyestWallet  String   @default("") 
+  creatorWallet String   @default("") 
+  gatewaySlug   String   @default("") 
+  amount        Float    @default(0) 
+  status        String   @default("") 
   timestamp     DateTime @default(now())
 }
