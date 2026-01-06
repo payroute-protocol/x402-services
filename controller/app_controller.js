@@ -697,7 +697,7 @@ export const detachResourceFromAgent = async (req, res) => {
 
 export const callAIChat = async (req, res) => {
     try {
-        const { agentId } = req.params;
+        const { agentSlug } = req.params;
         const { message } = req.body;
 
         if (!message) {
@@ -706,7 +706,7 @@ export const callAIChat = async (req, res) => {
 
         // Fetch Agent details including creator for wallet address
         const agent = await prisma.aIAgents.findUnique({
-            where: { id: agentId },
+            where: { slug: agentSlug },
             include: { creator: true }
         });
 
@@ -816,7 +816,7 @@ export const callAIChat = async (req, res) => {
                 try {
                     // Fetch Agent Resources
                     const maps = await prisma.agentResourceMap.findMany({
-                        where: { agentId: agentId },
+                        where: { agentId: agent.id },
                         include: {
                             resource: true
                         }
@@ -944,7 +944,7 @@ export const callAIChat = async (req, res) => {
             // Free agent logic
             // Fetch Agent Resources
             const maps = await prisma.agentResourceMap.findMany({
-                where: { agentId: agentId },
+                where: { agentId: agent.id },
                 include: {
                     resource: true
                 }

@@ -469,16 +469,15 @@ router.get('/agent/:agentId', getAgentDetails);
 
 /**
  * @swagger
- * /agent/{agentId}/chat:
+ * /agent/{agentSlug}/chat:
  *   post:
  *     summary: Chat with an AI Agent
  *     tags: [Agent]
  *     parameters:
  *       - in: path
- *         name: agentId
+ *         name: agentSlug
  *         schema:
  *           type: string
- *           format: uuid
  *         required: true
  *       - in: header
  *         name: x-payment-tx
@@ -511,7 +510,7 @@ router.get('/agent/:agentId', getAgentDetails);
  *       500:
  *         description: Server error
  */
-router.post('/agent/:agentId/chat', callAIChat);
+router.post('/agent/:agentSlug/chat', callAIChat);
 
 // Agent Resources
 
