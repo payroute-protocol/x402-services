@@ -56,7 +56,7 @@ export const getProfile = async (req, res) => {
 export const getCreatorAll = async (req, res) => {
     try {
         const assets = await prisma.creator.findMany({
-            orderBy: { walletAddress: 'desc'},
+            orderBy: { walletAddress: 'desc' },
         });
 
         return res.status(200).json(assets);
@@ -75,7 +75,7 @@ export const getCreatorWrapped = async (req, res) => {
             where: { creatorId: parseInt(idCreator) },
         });
 
-        if(wrapped.length === 0){
+        if (wrapped.length === 0) {
             return res.status(404).json({
                 message: "No wrapped data found for this creator",
             });
@@ -113,8 +113,8 @@ export const createWrapped = async (req, res) => {
         const baseurl = `${req.protocol}://${req.get('host')}`;
         const newUrl = `${baseurl}/${gatewaySlug}`;
 
-            // Simpan ke database
-         await prisma.wrappedData.create({
+        // Simpan ke database
+        await prisma.wrappedData.create({
             data: {
                 originalUrl: originalUrl,
                 methods: methods,
@@ -152,7 +152,7 @@ export const getPayroute = async (req, res) => {
     try {
         const { gatewaySlug } = req.params;
         const wrapped = await prisma.wrappedData.findUnique({
-             where: { gatewaySlug }
+            where: { gatewaySlug }
         });
 
         if (!wrapped) {
@@ -172,7 +172,7 @@ export const getPayroute = async (req, res) => {
         const paymentTx = req.headers['x-payment-tx'];
         if (paymentTx){
             const txHash = paymentTx.replace('Bearer ', '');
-            
+
             // Onchain Verification
             const musdAddress = process.env.MUSD_ADDRESS;
             const rpcUrl = process.env.MANTLE_TESTNET_RPC_URL;
@@ -182,19 +182,19 @@ export const getPayroute = async (req, res) => {
                 const tx = await provider.getTransaction(txHash);
 
                 if (!tx) {
-                     return res.status(402).json({ message: "Transaction not found" });
+                    return res.status(402).json({ message: "Transaction not found" });
                 }
 
                 if (!tx.blockNumber) {
-                     return res.status(402).json({ message: "Transaction pending" });
+                    return res.status(402).json({ message: "Transaction pending" });
                 }
 
                 // Verify Interaction with MUSD Contract
                 if (tx.to.toLowerCase() !== musdAddress.toLowerCase()) {
-                    return res.status(402).json({ 
-                        message: "Transaction is not to MUSD contract", 
+                    return res.status(402).json({
+                        message: "Transaction is not to MUSD contract",
                         expected: musdAddress,
-                        received: tx.to 
+                        received: tx.to
                     });
                 }
 
@@ -207,7 +207,7 @@ export const getPayroute = async (req, res) => {
                 try {
                     decodedData = erc20Interface.decodeFunctionData("transfer", tx.data);
                 } catch (err) {
-                     return res.status(402).json({ message: "Invalid transaction data (not transfer)" });
+                    return res.status(402).json({ message: "Invalid transaction data (not transfer)" });
                 }
 
                 const recipient = decodedData[0];
@@ -215,8 +215,8 @@ export const getPayroute = async (req, res) => {
 
                 // Verify Recipient
                 if (recipient.toLowerCase() !== paymentReceipt.toLowerCase()) {
-                     return res.status(402).json({ 
-                        message: "Invalid payment recipient", 
+                    return res.status(402).json({
+                        message: "Invalid payment recipient",
                         expected: paymentReceipt,
                         received: recipient
                     });
@@ -225,9 +225,9 @@ export const getPayroute = async (req, res) => {
                 // Verify Amount
                 // Assuming paymentAmount is standard float (e.g. 1.5) and MUSD uses 6 decimals
                 const expectedAmount = ethers.parseUnits(paymentAmount.toString(), 6);
-                
+
                 if (amount < expectedAmount) {
-                     return res.status(402).json({ 
+                    return res.status(402).json({
                         message: "Insufficient payment amount",
                         expected: paymentAmount.toString(),
                         received: ethers.formatUnits(amount, 6)
@@ -285,7 +285,7 @@ export const getPayroute = async (req, res) => {
             });
         }
 
-        
+
     } catch (error) {
         console.error("Error fetching payroute:", error);
         return res.status(500).json({
@@ -298,7 +298,7 @@ export const getPayrouteWithEscrow = async (req, res) => {
     try {
         const { gatewaySlug } = req.params;
         const wrapped = await prisma.wrappedData.findUnique({
-             where: { gatewaySlug }
+            where: { gatewaySlug }
         });
 
         if (!wrapped) {
@@ -318,24 +318,24 @@ export const getPayrouteWithEscrow = async (req, res) => {
         const paymentTx = req.headers['x-payment-tx'];
 
         if (paymentTx) {
-            
+
             // Verify Payment
             const txHash = paymentTx.replace('Bearer ', '');
 
             // Onchain component
             const escrowAddress = process.env.ESCROW_ADDRESS;
             const privateKey = process.env.PRIVATE_KEY;
-            const rpcUrl = process.env.MANTLE_TESTNET_RPC_URL; 
+            const rpcUrl = process.env.MANTLE_TESTNET_RPC_URL;
             const provider = new ethers.JsonRpcProvider(rpcUrl);
             const wallet = new ethers.Wallet(privateKey, provider);
-            
+
             // ABI for decoding createTx and calling finalize
             const escrowInterface = new ethers.Interface([
                 "function createTx(bytes32 txId, address creator, uint256 amount)",
                 "function finalizeSuccess(bytes32 txId) external",
                 "function finalizeFailure(bytes32 txId) external"
             ]);
-            
+
             const escrowContract = new ethers.Contract(escrowAddress, [
                 "function finalizeSuccess(bytes32 txId) external",
                 "function finalizeFailure(bytes32 txId) external"
@@ -347,7 +347,7 @@ export const getPayrouteWithEscrow = async (req, res) => {
             try {
                 // Verify Payment
                 const tx = await provider.getTransaction(txHash);
-                
+
                 if (!tx) {
                     return res.status(402).json({ message: "Transaction not found" });
                 }
@@ -362,7 +362,7 @@ export const getPayrouteWithEscrow = async (req, res) => {
                 const txId = decodedData[0]; // bytes32
                 const creator = decodedData[1]; // address
                 decodedAmount = decodedData[2]; // uint256
-                
+
                 decodedTxId = txId;
 
                 // Check existing txId on Db
@@ -375,7 +375,7 @@ export const getPayrouteWithEscrow = async (req, res) => {
                 }
 
                 if (creator.toLowerCase() !== dbTx.creatorWallet.toLowerCase()) {
-                    return res.status(402).json({ 
+                    return res.status(402).json({
                         message: "Invalid payment recipient in transaction",
                         expected: dbTx.creatorWallet,
                         received: creator
@@ -386,7 +386,7 @@ export const getPayrouteWithEscrow = async (req, res) => {
                 // paymentAmount is Float (e.g. 1.5). mUSDC usually 6 decimals.
                 const expectedAmount = ethers.parseUnits(paymentAmount.toString(), 6);
                 if (decodedAmount < expectedAmount) {
-                     return res.status(402).json({ 
+                    return res.status(402).json({
                         message: "Insufficient payment amount",
                         expected: paymentAmount.toString(),
                         received: ethers.formatUnits(decodedAmount, 6)
@@ -408,55 +408,55 @@ export const getPayrouteWithEscrow = async (req, res) => {
                 });
 
                 if (response.status >= 200 && response.status < 300) {
-                     // Success - Finalize Success
-                     console.log(`Forwarding success. Finalizing Escrow ${decodedTxId} to SUCCESS...`);
-                     
-                     // Approve token before finalizing 
-                     const musdAddress = process.env.MUSD_ADDRESS;
-                     const tokenContract = new ethers.Contract(musdAddress, ["function approve(address spender, uint256 amount) external returns (bool)"], wallet);
-                     
-                     // Note: We are approving the Escrow Contract to spend OUR (Executor's) tokens.
-                     const amountToApprove = decodedAmount;
-                     
-                     try {
+                    // Success - Finalize Success
+                    console.log(`Forwarding success. Finalizing Escrow ${decodedTxId} to SUCCESS...`);
+
+                    // Approve token before finalizing 
+                    const musdAddress = process.env.MUSD_ADDRESS;
+                    const tokenContract = new ethers.Contract(musdAddress, ["function approve(address spender, uint256 amount) external returns (bool)"], wallet);
+
+                    // Note: We are approving the Escrow Contract to spend OUR (Executor's) tokens.
+                    const amountToApprove = decodedAmount;
+
+                    try {
                         const approveTx = await tokenContract.approve(escrowAddress, amountToApprove);
                         console.log(`Approval tx sent: ${approveTx.hash}`);
                         await approveTx.wait();
                         console.log("Approval confirmed.");
-                     } catch (appErr) {
-                         console.error("Approval failed:", appErr);
-                         return res.status(500).json({ message: "Token Approval Failed" });
-                     }
+                    } catch (appErr) {
+                        console.error("Approval failed:", appErr);
+                        return res.status(500).json({ message: "Token Approval Failed" });
+                    }
 
-                     const tx = await escrowContract.finalizeSuccess(decodedTxId);
-                     await tx.wait(); // Wait for confirmation
-                     console.log(`Finalized Escrow ${decodedTxId} to SUCCESS.`);
-                     
-                     return res.status(response.status).json(response.data);
-                 } else {
-                     // Failure from upstream - Finalize Failure (Refund)
-                     console.log(`Forwarding failed (${response.status}). Finalizing Escrow ${decodedTxId} to FAILED...`);
-                     const tx = await escrowContract.finalizeFailure(decodedTxId);
-                     await tx.wait();
+                    const tx = await escrowContract.finalizeSuccess(decodedTxId);
+                    await tx.wait(); // Wait for confirmation
+                    console.log(`Finalized Escrow ${decodedTxId} to SUCCESS.`);
 
-                     console.log(`Finalized Escrow ${decodedTxId} to FAILED.`);
+                    return res.status(response.status).json(response.data);
+                } else {
+                    // Failure from upstream - Finalize Failure (Refund)
+                    console.log(`Forwarding failed (${response.status}). Finalizing Escrow ${decodedTxId} to FAILED...`);
+                    const tx = await escrowContract.finalizeFailure(decodedTxId);
+                    await tx.wait();
 
-                     return res.status(response.status).json(response.data);
-                 }
+                    console.log(`Finalized Escrow ${decodedTxId} to FAILED.`);
+
+                    return res.status(response.status).json(response.data);
+                }
 
             } catch (error) {
-                 console.error("Forwarding error:", error);
-                 // Network error or other issue
-                 if (decodedTxId) {
-                     console.log(`Forwarding exception. Finalizing Escrow ${decodedTxId} to FAILED...`);
-                     try {
+                console.error("Forwarding error:", error);
+                // Network error or other issue
+                if (decodedTxId) {
+                    console.log(`Forwarding exception. Finalizing Escrow ${decodedTxId} to FAILED...`);
+                    try {
                         const tx = await escrowContract.finalizeFailure(decodedTxId);
                         await tx.wait();
-                     } catch (finalizeError) {
-                         console.error("Error finalizing failure:", finalizeError);
-                     }
-                 }
-                 return res.status(502).json({ message: "Bad Gateway / Upstream Error" });
+                    } catch (finalizeError) {
+                        console.error("Error finalizing failure:", finalizeError);
+                    }
+                }
+                return res.status(502).json({ message: "Bad Gateway / Upstream Error" });
             }
 
         } else {
@@ -515,7 +515,7 @@ export const createAgent = async (req, res) => {
         const { name, slug, description, modelProvider, modelName, systemPrompt, pricePerHit, isActive } = req.body;
 
         if (!creatorId || !name || !slug || !modelProvider || !modelName || !systemPrompt) {
-             return res.status(400).json({ message: "Missing required fields" });
+            return res.status(400).json({ message: "Missing required fields" });
         }
 
         const agent = await prisma.aIAgents.create({
@@ -535,11 +535,11 @@ export const createAgent = async (req, res) => {
         return res.status(201).json(agent);
 
     } catch (error) {
-         console.error("Error creating agent:", error);
-         if (error.code === 'P2002') { // Slug unique
-             return res.status(409).json({ message: "Agent slug already exists" });
-         }
-         return res.status(500).json({ message: "Internal Server Error" });
+        console.error("Error creating agent:", error);
+        if (error.code === 'P2002') { // Slug unique
+            return res.status(409).json({ message: "Agent slug already exists" });
+        }
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
 
@@ -563,12 +563,12 @@ export const getAgentDetails = async (req, res) => {
     try {
         const { agentId } = req.params;
         const agent = await prisma.aIAgents.findUnique({
-             where: { id: agentId },
-             include: { resources: true } // Include resources if needed, or mapped resources
+            where: { id: agentId },
+            include: { resources: true } // Include resources if needed, or mapped resources
         });
 
         if (!agent) {
-             return res.status(404).json({ message: "Agent not found" });
+            return res.status(404).json({ message: "Agent not found" });
         }
         return res.status(200).json(agent);
     } catch (error) {
@@ -608,7 +608,7 @@ export const createAgentResource = async (req, res) => {
 export const getCreatorResources = async (req, res) => {
     try {
         const { creatorId } = req.params;
-        
+
         const resources = await prisma.agentResource.findMany({
             where: { creatorId: parseInt(creatorId) },
             orderBy: { createdAt: 'desc' }
@@ -643,7 +643,7 @@ export const attachResourceToAgent = async (req, res) => {
     } catch (error) {
         console.error("Error attaching resource:", error);
         if (error.code === 'P2002') { // Unique constraint
-             return res.status(409).json({ message: "Resource already attached" });
+            return res.status(409).json({ message: "Resource already attached" });
         }
         return res.status(500).json({ message: "Internal Server Error" });
     }
@@ -666,7 +666,7 @@ export const getAgentResources = async (req, res) => {
 
         return res.status(200).json(resources);
     } catch (error) {
-         console.error("Error fetching agent resources:", error);
+        console.error("Error fetching agent resources:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
@@ -687,10 +687,10 @@ export const detachResourceFromAgent = async (req, res) => {
 
         return res.status(200).json({ message: "Resource detached" });
     } catch (error) {
-         console.error("Error detaching resource:", error);
-         if (error.code === 'P2025') { // Rec not found
-             return res.status(404).json({ message: "Linkage not found" });
-         }
+        console.error("Error detaching resource:", error);
+        if (error.code === 'P2025') { // Rec not found
+            return res.status(404).json({ message: "Linkage not found" });
+        }
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
@@ -711,7 +711,7 @@ export const callAIChat = async (req, res) => {
         });
 
         if (!agent) {
-             return res.status(404).json({ error: "Agent not found" });
+            return res.status(404).json({ error: "Agent not found" });
         }
 
         const pricePerHit = agent.pricePerHit;
@@ -721,28 +721,28 @@ export const callAIChat = async (req, res) => {
         // Assuming we always enforcement payment flow for consistency if price > 0, 
         // but if price is 0 maybe allow free access? 
         // For now, let's implement the payment flow if price > 0.
-        
+
         if (pricePerHit > 0) {
             const paymentTx = req.headers['x-payment-tx'];
-            
+
             if (paymentTx) {
-                 // Verify Payment
+                // Verify Payment
                 const txHash = paymentTx.replace('Bearer ', '');
 
                 // Onchain component
                 const escrowAddress = process.env.ESCROW_ADDRESS;
                 const privateKey = process.env.PRIVATE_KEY;
-                const rpcUrl = process.env.MANTLE_TESTNET_RPC_URL; 
+                const rpcUrl = process.env.MANTLE_TESTNET_RPC_URL;
                 const provider = new ethers.JsonRpcProvider(rpcUrl);
                 const wallet = new ethers.Wallet(privateKey, provider);
-                
+
                 // ABI for decoding createTx and calling finalize
                 const escrowInterface = new ethers.Interface([
                     "function createTx(bytes32 txId, address creator, uint256 amount)",
                     "function finalizeSuccess(bytes32 txId) external",
                     "function finalizeFailure(bytes32 txId) external"
                 ]);
-                
+
                 const escrowContract = new ethers.Contract(escrowAddress, [
                     "function finalizeSuccess(bytes32 txId) external",
                     "function finalizeFailure(bytes32 txId) external"
@@ -754,7 +754,7 @@ export const callAIChat = async (req, res) => {
                 try {
                     // Verify Payment
                     const tx = await provider.getTransaction(txHash);
-                    
+
                     if (!tx) {
                         return res.status(402).json({ message: "Transaction not found" });
                     }
@@ -768,7 +768,7 @@ export const callAIChat = async (req, res) => {
                     const txId = decodedData[0]; // bytes32
                     const creator = decodedData[1]; // address
                     decodedAmount = decodedData[2]; // uint256
-                    
+
                     decodedTxId = txId;
 
                     // Check existing txId on Db to ensure it's not reused or fake if we were tracking strict content access, 
@@ -780,17 +780,17 @@ export const callAIChat = async (req, res) => {
                     });
 
                     if (!dbTx) {
-                       // It might be a direct call not initiated via our 402 response? 
-                       // But providing a robust system, we expect the client to have received the 402 first which created the DB entry.
-                       return res.status(402).json({ message: "Transaction ID not found in database" });
+                        // It might be a direct call not initiated via our 402 response? 
+                        // But providing a robust system, we expect the client to have received the 402 first which created the DB entry.
+                        return res.status(402).json({ message: "Transaction ID not found in database" });
                     }
-                    
+
                     if (dbTx.status !== "PENDING") {
                         return res.status(402).json({ message: "Transaction already processed" });
                     }
 
                     if (creator.toLowerCase() !== paymentReceipt.toLowerCase()) {
-                        return res.status(402).json({ 
+                        return res.status(402).json({
                             message: "Invalid payment recipient in transaction",
                             expected: paymentReceipt,
                             received: creator
@@ -800,7 +800,7 @@ export const callAIChat = async (req, res) => {
                     // Verify Amount
                     const expectedAmount = ethers.parseUnits(pricePerHit.toString(), 6);
                     if (decodedAmount < expectedAmount) {
-                         return res.status(402).json({ 
+                        return res.status(402).json({
                             message: "Insufficient payment amount",
                             expected: pricePerHit.toString(),
                             received: ethers.formatUnits(decodedAmount, 6)
@@ -814,7 +814,7 @@ export const callAIChat = async (req, res) => {
 
                 // --- Execute AI Chat ---
                 try {
-                     // Fetch Agent Resources
+                    // Fetch Agent Resources
                     const maps = await prisma.agentResourceMap.findMany({
                         where: { agentId: agentId },
                         include: {
@@ -846,27 +846,27 @@ export const callAIChat = async (req, res) => {
                     // --- Success: Finalize Payment ---
                     console.log(`AI Chat success. Finalizing Escrow ${decodedTxId} to SUCCESS...`);
 
-                     // Approve token before finalizing 
-                     const musdAddress = process.env.MUSD_ADDRESS;
-                     const tokenContract = new ethers.Contract(musdAddress, ["function approve(address spender, uint256 amount) external returns (bool)"], wallet);
-                     
-                     // Note: We are approving the Escrow Contract to spend OUR (Executor's) tokens.
-                     const amountToApprove = decodedAmount;
-                     
-                     try {
+                    // Approve token before finalizing 
+                    const musdAddress = process.env.MUSD_ADDRESS;
+                    const tokenContract = new ethers.Contract(musdAddress, ["function approve(address spender, uint256 amount) external returns (bool)"], wallet);
+
+                    // Note: We are approving the Escrow Contract to spend OUR (Executor's) tokens.
+                    const amountToApprove = decodedAmount;
+
+                    try {
                         const approveTx = await tokenContract.approve(escrowAddress, amountToApprove);
                         console.log(`Approval tx sent: ${approveTx.hash}`);
                         await approveTx.wait();
                         console.log("Approval confirmed.");
-                     } catch (appErr) {
-                         console.error("Approval failed:", appErr);
-                         // If approval fails, we might technically initiate a refund or retry, 
-                         // but for now let's error out. AI response was generated though.
-                         return res.status(500).json({ message: "Token Approval Failed" });
-                     }
+                    } catch (appErr) {
+                        console.error("Approval failed:", appErr);
+                        // If approval fails, we might technically initiate a refund or retry, 
+                        // but for now let's error out. AI response was generated though.
+                        return res.status(500).json({ message: "Token Approval Failed" });
+                    }
 
                     const tx = await escrowContract.finalizeSuccess(decodedTxId);
-                    await tx.wait(); 
+                    await tx.wait();
                     console.log(`Finalized Escrow ${decodedTxId} to SUCCESS.`);
 
                     // Mark DB as success
@@ -880,18 +880,18 @@ export const callAIChat = async (req, res) => {
                 } catch (error) {
                     // --- Failure: Refund ---
                     console.error("AI Generation error:", error);
-                    
+
                     if (decodedTxId) {
                         console.log(`AI Error. Finalizing Escrow ${decodedTxId} to FAILED...`);
                         try {
-                           const tx = await escrowContract.finalizeFailure(decodedTxId);
-                           await tx.wait();
+                            const tx = await escrowContract.finalizeFailure(decodedTxId);
+                            await tx.wait();
 
-                           // Mark DB as failed
-                           await prisma.transactions.update({
-                               where: { id: decodedTxId },
-                               data: { status: "FAILED" }
-                           });
+                            // Mark DB as failed
+                            await prisma.transactions.update({
+                                where: { id: decodedTxId },
+                                data: { status: "FAILED" }
+                            });
 
                         } catch (finalizeError) {
                             console.error("Error finalizing failure:", finalizeError);
@@ -901,8 +901,8 @@ export const callAIChat = async (req, res) => {
                 }
 
             } else {
-                 // --- 402 Payment Required ---
-                
+                // --- 402 Payment Required ---
+
                 // create transaction in DB
                 let dbTx;
                 const txId = keccak256(
@@ -939,11 +939,11 @@ export const callAIChat = async (req, res) => {
                     requiredHeader: "x-payment-tx"
                 });
             }
-        
+
         } else {
-             // Free agent logic
-             // Fetch Agent Resources
-             const maps = await prisma.agentResourceMap.findMany({
+            // Free agent logic
+            // Fetch Agent Resources
+            const maps = await prisma.agentResourceMap.findMany({
                 where: { agentId: agentId },
                 include: {
                     resource: true
@@ -975,3 +975,96 @@ export const callAIChat = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }
+
+// Login & Verify
+export const nonce = async (req, res) => {
+    const { walletAddress } = req.body;
+    if (!walletAddress) {
+        return res.status(400).json({ message: "Wallet address is required" });
+    }
+
+    try {
+        const nonce = Math.floor(Math.random() * 1000000).toString();
+
+        // Upsert? Or just update? User said "update nonce on table creator".
+        // Assuming creator exists.
+        const creator = await prisma.creator.findUnique({
+            where: { walletAddress }
+        });
+
+        if (!creator) {
+            return res.status(404).json({ message: "Creator not found" });
+        }
+
+        await prisma.creator.update({
+            where: { walletAddress },
+            data: { nonce }
+        });
+
+        return res.status(200).json({ nonce });
+    } catch (error) {
+        console.error("Error generating nonce:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const loginVerify = async (req, res) => {
+    const { walletAddress, signature } = req.body;
+
+    // Check if user provided 'nonce' in body to satisfy the specific 402 condition logic request
+    const providedNonce = req.body.nonce;
+
+    if (!walletAddress || !signature) {
+        return res.status(400).json({ message: "Wallet address and signature are required" });
+    }
+
+    try {
+        const creator = await prisma.creator.findUnique({
+            where: { walletAddress }
+        });
+
+        if (!creator) {
+            return res.status(404).json({ message: "Creator not found" });
+        }
+
+        const dbNonce = creator.nonce;
+
+        // Specific logic regarding nonce reuse checking
+        if (providedNonce && providedNonce === dbNonce) {
+            return res.status(402).json({ message: "Creator already logged in using this nonce" });
+        }
+
+        if (!dbNonce) {
+            return res.status(400).json({ message: "Nonce not generated for this user" });
+        }
+
+        // Verify Signature
+        try {
+            const recoveredAddress = ethers.verifyMessage(dbNonce, signature);
+
+            if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+                return res.status(401).json({ message: "Invalid signature: Address mismatch" });
+            }
+        } catch (sigError) {
+            console.error("Signature verification failed:", sigError);
+            return res.status(400).json({ message: "Invalid signature format" });
+        }
+
+        // Update nonce after successful login
+        const newNonce = Math.floor(Math.random() * 1000000).toString();
+
+        await prisma.creator.update({
+            where: { walletAddress },
+            data: { nonce: newNonce }
+        });
+
+        return res.status(200).json({
+            message: "Login successful",
+            walletAddress: walletAddress
+        });
+
+    } catch (error) {
+        console.error("Error verifying login:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};

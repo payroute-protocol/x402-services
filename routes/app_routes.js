@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerCreator, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute, getPayrouteWithEscrow, createAgent, getCreatorAgents, getAgentDetails, createAgentResource, getCreatorResources, attachResourceToAgent, getAgentResources, detachResourceFromAgent, callAIChat } from '../controller/app_controller.js';
+import { registerCreator, loginVerify, nonce, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute, getPayrouteWithEscrow, createAgent, getCreatorAgents, getAgentDetails, createAgentResource, getCreatorResources, attachResourceToAgent, getAgentResources, detachResourceFromAgent, callAIChat } from '../controller/app_controller.js';
 
 const router = express.Router();
 
@@ -651,5 +651,8 @@ router.get('/agent/:agentId/resources', getAgentResources);
  *         description: Server error
  */
 router.delete('/agent/:agentId/resources/:resourceId', detachResourceFromAgent);
+
+router.post('/login/verify', loginVerify);
+router.post('/nonce/login', nonce);
 
 export default router;
