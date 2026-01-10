@@ -1,5 +1,7 @@
 import express from 'express';
-import { listAiAgent,listWrapped,registerCreator, loginVerify, nonce, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute, getPayrouteWithEscrow, createAgent, getCreatorAgents, getAgentDetails, createAgentResource, getCreatorResources, attachResourceToAgent, getAgentResources, detachResourceFromAgent, callAIChat } from '../controller/app_controller.js';
+import { pinata, listAiAgent, listWrapped, registerCreator, loginVerify, nonce, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute, getPayrouteWithEscrow, createAgent, getCreatorAgents, getAgentDetails, createAgentResource, getCreatorResources, attachResourceToAgent, getAgentResources, detachResourceFromAgent, callAIChat } from '../controller/app_controller.js';
+import multer from 'multer';
+const upload = multer()
 
 const router = express.Router();
 
@@ -780,5 +782,7 @@ router.get('/list/urlWrapped', listWrapped)
  *         description: Server error
  */
 router.get('/list/ai-agent', listAiAgent)
+
+router.post('/api/upload/image', upload.single('file'),pinata)
 
 export default router;

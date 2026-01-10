@@ -26,6 +26,7 @@ model Creator {
 
 model WrappedData {
   id          Int     @id @default(autoincrement())
+  icon String?
   originalUrl String
   methods     String
   gatewaySlug     String @unique

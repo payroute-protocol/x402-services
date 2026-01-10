@@ -2,6 +2,7 @@ import { prisma } from "../util/prisma_config.js"
 import { ethers, keccak256, toUtf8Bytes } from "ethers";
 import axios from "axios";
 import { chat } from "./agent_service.js";
+import FormData from "form-data";
 
 
 export const registerCreator = async (req, res) => {
@@ -92,12 +93,13 @@ export const getCreatorWrapped = async (req, res) => {
 
 export const createWrapped = async (req, res) => {
     try {
-        const { originalUrl, methods, gatewaySlug, header, body, paymentAmount,paymentReceipt, description} = req.body;
-        const {creatorId} = req.params;
+        const { originalUrl,urlImage, methods, gatewaySlug, header, body, paymentAmount, paymentReceipt, description } = req.body;
+        const { creatorId } = req.params;
         if (
+            !urlImage ||
             !originalUrl ||
             !methods ||
-            !gatewaySlug||
+            !gatewaySlug ||
             !paymentAmount ||
             !paymentReceipt ||
             !description
@@ -125,7 +127,8 @@ export const createWrapped = async (req, res) => {
                 paymentReceipt: paymentReceipt,
                 description: description,
                 creatorId: parseInt(creatorId),
-                urlWrapped: newUrl
+                urlWrapped: newUrl,
+                icon: urlImage
             },
         });
 
@@ -161,7 +164,7 @@ export const getPayroute = async (req, res) => {
             });
         }
 
-        const {originalUrl, methods, paymentReceipt, paymentAmount} = wrapped;
+        const { originalUrl, methods, paymentReceipt, paymentAmount } = wrapped;
         const requestMethod = req.method.toUpperCase();
         if (!methods.includes(requestMethod)) {
             return res.status(405).json({
@@ -170,7 +173,7 @@ export const getPayroute = async (req, res) => {
         }
 
         const paymentTx = req.headers['x-payment-tx'];
-        if (paymentTx){
+        if (paymentTx) {
             const txHash = paymentTx.replace('Bearer ', '');
 
             // Onchain Verification
@@ -247,7 +250,7 @@ export const getPayroute = async (req, res) => {
             });
 
             return res.status(response.status).json(response.data);
-        } else{
+        } else {
             // create transaction in DB
             let dbTx;
             const txId = keccak256(
@@ -307,7 +310,7 @@ export const getPayrouteWithEscrow = async (req, res) => {
             });
         }
 
-        const {originalUrl, methods, paymentReceipt, paymentAmount} = wrapped;
+        const { originalUrl, methods, paymentReceipt, paymentAmount } = wrapped;
         const requestMethod = req.method.toUpperCase();
         if (!methods.includes(requestMethod)) {
             return res.status(405).json({
@@ -1055,9 +1058,9 @@ export const loginVerify = async (req, res) => {
 export const listWrapped = async (req, res) => {
     try {
         const wrapped = await prisma.wrappedData.findMany({
-            select:{
-                urlWrapped:true,
-                creatorId:true
+            select: {
+                urlWrapped: true,
+                creatorId: true
             }
         });
         return res.status(200).json(wrapped);
@@ -1070,13 +1073,70 @@ export const listWrapped = async (req, res) => {
 export const listAiAgent = async (req, res) => {
     try {
         const wrapped = await prisma.aIAgents.findMany({
-          orderBy:{
-            createdAt:"desc"
-          }
+            orderBy: {
+                createdAt: "desc"
+            }
         });
         return res.status(200).json(wrapped);
     } catch (error) {
         console.error("Error listing wrapped:", error);
         return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+
+export const pinata = async (req, res) => {
+    try {
+        // 1. Ganti ke req.file
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        const formData = new FormData();
+        // 2. Gunakan req.file.buffer karena multer menyimpannya di memori
+        formData.append('file', req.file.buffer, {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
+
+        const metadata = JSON.stringify({
+            name: req.file.originalname,
+        });
+        formData.append('pinataMetadata', metadata);
+
+        const options = JSON.stringify({
+            cidVersion: 0,
+        });
+        formData.append('pinataOptions', options);
+
+        const response = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
+            headers: {
+                ...formData.getHeaders(),
+                'Authorization': `Bearer ${process.env.JWT}`
+            }
+        });
+
+        const ipfsHash = response.data.IpfsHash;
+        const url = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+
+        // PERBAIKAN PRISMA: .create tidak pakai 'where'
+        // Jika ingin update data yang sudah ada berdasarkan creatorId:
+        // const updatedData = await prisma.wrappedData.update({
+        //     where: {
+        //         creatorId: parseInt(req.body.creatorId)
+        //     },
+        //     data: {
+        //         icon: url,
+        //     }
+        // });
+
+        return res.status(200).json({ url });
+
+    } catch (error) {
+        console.error("Error uploading to Pinata:", error);
+        if (error.response) {
+            return res.status(error.response.status).json(error.response.data);
+        }
+        return res.status(500).json({ message: error.message });
     }
 };

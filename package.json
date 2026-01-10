@@ -28,6 +28,8 @@
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0",
     "express": "^5.2.1",
+    "form-data": "^4.0.5",
+    "multer": "^2.0.2",
     "prisma": "^5.22.0",
     "readline-sync": "^1.4.10",
     "swagger-jsdoc": "^6.2.8",
