@@ -1051,3 +1051,18 @@ export const loginVerify = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const listWrapped = async (req, res) => {
+    try {
+        const wrapped = await prisma.wrappedData.findMany({
+            select:{
+                urlWrapped:true,
+                creatorId:true
+            }
+        });
+        return res.status(200).json(wrapped);
+    } catch (error) {
+        console.error("Error listing wrapped:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};

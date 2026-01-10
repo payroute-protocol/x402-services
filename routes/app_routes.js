@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerCreator, loginVerify, nonce, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute, getPayrouteWithEscrow, createAgent, getCreatorAgents, getAgentDetails, createAgentResource, getCreatorResources, attachResourceToAgent, getAgentResources, detachResourceFromAgent, callAIChat } from '../controller/app_controller.js';
+import { listWrapped,registerCreator, loginVerify, nonce, getProfile, getCreatorAll, getCreatorWrapped, createWrapped, getPayroute, getPayrouteWithEscrow, createAgent, getCreatorAgents, getAgentDetails, createAgentResource, getCreatorResources, attachResourceToAgent, getAgentResources, detachResourceFromAgent, callAIChat } from '../controller/app_controller.js';
 
 const router = express.Router();
 
@@ -735,5 +735,30 @@ router.post('/login/verify', loginVerify);
  *         description: Server error
  */
 router.post('/nonce/login', nonce);
+
+/**
+ * @swagger
+ * /list/urlWrapped:
+ *   get:
+ *     summary: List all wrapped URLs
+ *     tags: [Creator]
+ *     responses:
+ *       200:
+ *         description: List of wrapped URLs and creator IDs.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   urlWrapped:
+ *                     type: string
+ *                   creatorId:
+ *                     type: integer
+ *       500:
+ *         description: Server error
+ */
+router.get('/list/urlWrapped', listWrapped)
 
 export default router;
