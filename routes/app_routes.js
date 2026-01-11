@@ -783,6 +783,38 @@ router.get('/list/urlWrapped', listWrapped)
  */
 router.get('/list/ai-agent', listAiAgent)
 
-router.post('/api/upload/image', upload.single('file'),pinata)
+/**
+ * @swagger
+ * /api/upload/image:
+ *   post:
+ *     summary: Upload an image to Pinata IPFS
+ *     tags: [Utils]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                   description: The IPFS URL of the uploaded image
+ *       400:
+ *         description: No file uploaded
+ *       500:
+ *         description: Server error
+ */
+router.post('/api/upload/image', upload.single('file'), pinata)
 
 export default router;
