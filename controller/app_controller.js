@@ -1267,7 +1267,8 @@ export const listWrapped = async (req, res) => {
         const wrapped = await prisma.wrappedData.findMany({
             select: {
                 urlWrapped: true,
-                creatorId: true
+                creatorId: true,
+                icon: true,
             }
         });
         return res.status(200).json(wrapped);
